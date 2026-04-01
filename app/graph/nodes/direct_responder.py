@@ -15,17 +15,19 @@ async def direct_responder_node(state):
     prompt = build_companion_prompt(message, history, summary, emotional_intensity)
 
     try:
-        result = await llm.call(
-            model=state.get("model_used", "llama-3.3-70b-versatile"),
+        import json
+        selected_model = state.get("model_used", "llama-3.3-70b-versatile")
+        result, actual_model = await llm.call(
+            model=selected_model,
             messages=prompt,
             response_format={"type": "json_object"}
         )
 
-        import json
         data = json.loads(result)
 
         return {
             **state,
+            "model_used": actual_model,  # reflects actual model, including fallbacks
             "response": data.get("response", ""),
             "emotions": data.get("emotions", []),
             "risk_level": data.get("risk_level", "low"),

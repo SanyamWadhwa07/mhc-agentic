@@ -18,7 +18,8 @@ async def observability_node(state):
         "safety_triggered": state.get("is_crisis", False),
         "rate_limited": state.get("is_rate_limited", False),
         "referral_needed": state.get("referral_needed", False),
-        "fallback_triggered": False,  # updated by llm_service
+        "selected_model": state.get("selected_model", state.get("model_used", "unknown")),
+        "fallback_triggered": state.get("fallback_triggered", False),
     }
 
     log.info("request_complete", **metrics)

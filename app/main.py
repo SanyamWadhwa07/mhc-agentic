@@ -74,6 +74,8 @@ async def chat(request: ChatRequest):
             "tool_results": [],
             "rag_confidence": 1.0,
             "model_used": settings.groq_quality_model,
+            "selected_model": settings.groq_quality_model,
+            "fallback_triggered": False,
             "session_history": history,
             "session_summary": summary,
             "last_risk_level": last_risk,

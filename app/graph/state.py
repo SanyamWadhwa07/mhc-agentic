@@ -26,7 +26,9 @@ class MHCState(TypedDict):
     rag_confidence: float
 
     # Model selection
-    model_used: str
+    model_used: str        # actual model that ran (may differ from selected if fallback)
+    selected_model: str    # what the router picked
+    fallback_triggered: bool
 
     # Memory
     session_history: List[Dict[str, Any]]

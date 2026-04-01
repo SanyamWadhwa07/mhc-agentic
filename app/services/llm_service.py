@@ -31,9 +31,11 @@ class LLMService:
         response = await self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
 
-    async def call(self, model: str, messages: list, response_format: dict = None) -> str:
+    async def call(self, model: str, messages: list, response_format: dict = None) -> tuple[str, str]:
+        """Returns (content, actual_model_used)"""
         try:
-            return await self._call_model(model, messages, response_format)
+            content = await self._call_model(model, messages, response_format)
+            return content, model
         except Exception as e:
             log.error("primary_model_failed", model=model, error=str(e))
 
@@ -42,7 +44,8 @@ class LLMService:
                 try:
                     log.warning("fallback_to_70b")
                     self.fallback_triggered = True
-                    return await self._call_model(settings.groq_quality_model, messages, response_format)
+                    content = await self._call_model(settings.groq_quality_model, messages, response_format)
+                    return content, settings.groq_quality_model
                 except Exception as e2:
                     log.error("fallback_70b_failed", error=str(e2))
 
@@ -50,7 +53,8 @@ class LLMService:
                 try:
                     log.warning("fallback_to_fast_model")
                     self.fallback_triggered = True
-                    return await self._call_model(settings.groq_fast_model, messages, response_format)
+                    content = await self._call_model(settings.groq_fast_model, messages, response_format)
+                    return content, settings.groq_fast_model
                 except Exception as e3:
                     log.error("fallback_fast_failed", error=str(e3))
 
@@ -64,4 +68,4 @@ class LLMService:
                 "clinical_flags": [],
                 "referral_needed": True
             }
-            return json.dumps(template)
+            return json.dumps(template), "template"

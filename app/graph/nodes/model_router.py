@@ -15,4 +15,4 @@ async def model_router_node(state):
     )
 
     model = settings.quality_response_model if use_120b else settings.groq_quality_model
-    return {**state, "model_used": model}
+    return {**state, "model_used": model, "selected_model": model}

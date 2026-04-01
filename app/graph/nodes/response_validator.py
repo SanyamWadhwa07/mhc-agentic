@@ -39,7 +39,7 @@ async def response_validator_node(state):
 
             prompt = build_companion_prompt(message, history, summary, emotional_intensity, force_empathy=True)
             import json
-            raw = await llm.call(
+            raw, _ = await llm.call(
                 model=state.get("model_used", "llama-3.3-70b-versatile"),
                 messages=prompt,
                 response_format={"type": "json_object"}

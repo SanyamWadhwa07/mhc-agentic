@@ -35,7 +35,7 @@ async def _maybe_summarize(state: dict):
             llm = LLMService()
             history = await svc.get_recent_history(state["user_id"], state["session_id"], n=10)
             prompt = build_summary_prompt(history)
-            summary = await llm.call(model=settings.groq_fast_model, messages=prompt)
+            summary, _ = await llm.call(model=settings.groq_fast_model, messages=prompt)
             await svc.save_summary(state["user_id"], state["session_id"], summary)
     except Exception as e:
         log.error("summary_failed", error=str(e))
