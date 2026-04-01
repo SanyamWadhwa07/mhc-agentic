@@ -1,133 +1,162 @@
-MHC Collaborative Multi-Agent System with RAG
-==============================================
+# MHC Agentic V4 — Mental Health Companion
 
-Mental Health Care chatbot where specialized expert agents collaborate with a master agent to formulate optimal responses using RAG-enhanced knowledge.
+> Cheap models handle structure. Expensive models handle humans. Deterministic systems handle safety.
 
-## Architecture
+A Hinglish-aware, agentic mental health companion for India — built on LangGraph with a cost-efficient model routing pipeline.
 
-**Collaborative Multi-Agent System:**
-Instead of routing to a single agent, the system consults relevant specialized experts who each contribute their knowledge. A master agent then synthesizes all expert input into a unified, comprehensive response.
+---
 
-**How It Works:**
-1. User sends a message
-2. Master agent identifies which experts are relevant (assessment, therapy, crisis, resource)
-3. Each relevant expert agent:
-   - Performs semantic search on its specialized knowledge base
-   - Retrieves top 3 most relevant documents
-   - Provides concise expert contribution (2-3 sentences)
-4. Master agent receives all expert contributions
-5. Master agent synthesizes contributions into a unified, empathetic response
-6. User receives comprehensive answer informed by multiple areas of expertise
+## What it does
 
-**Expert Agents with Knowledge Bases:**
-- **Assessment Expert** - Clinical screening tools, symptom databases, assessment questionnaires (10 documents)
-- **Therapy Expert** - CBT techniques, mindfulness, coping strategies, therapeutic exercises (15 documents)
-- **Crisis Expert** - Emergency resources, crisis hotlines, safety planning, intervention protocols (15 documents)
-- **Resource Expert** - Mental health professionals, therapy types, support groups, insurance (15 documents)
-- **Master Agent** - Coordinates experts and synthesizes their contributions into optimal responses
+A warm, Gen Z-toned chatbot that validates emotions, offers evidence-based coping, and refers to professionals when clinical signals exceed its scope. It is **not** a diagnostic tool and **not** a replacement for therapy.
 
-**Key Advantages:**
-- Multi-perspective responses combining clinical, therapeutic, safety, and practical guidance
-- Smaller LLMs (llama-3.1-8b-instant) perform like larger models through RAG
-- **Intelligent conversation memory** - Auto-summarizes every 10 messages for long-term context
-- **Background psychological assessment** - Seamlessly tracks PHQ-9, GAD-7 symptoms invisibly
-- **Natural friend-like conversation** - User chats naturally while clinical analysis happens behind the scenes
-- All sessions and assessments stored for review and analysis
-- Transparent - shows which experts were consulted and what knowledge informed the response
-- Adaptive - automatically consults only relevant experts for each query
-- Evidence-based responses grounded in 55+ mental health knowledge documents
-- Cost-effective and fast with collaborative approach
+---
 
-**Background Assessment Features:**
-- Automatically detects depression (PHQ-9) and anxiety (GAD-7) symptoms
-- Tracks symptom mentions across conversation
-- Calculates risk levels (low, moderate, high)
-- Stores all data in `sessions/` directory for later review
-- User experiences natural conversation - assessment is invisible
-- LLM receives clinical context to inform responses appropriately
+## Architecture at a glance
 
-Environment Setup
------------------
-1. Copy `.env.example` to `.env`
-2. Set `LLM_PROVIDER` to `groq` or `gemini`
-3. Add your API key (`GROQ_API_KEY` or `GEMINI_API_KEY`)
-
-Quick Start (PowerShell)
-------------------------
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-# Configure .env with your API key
-python run_agent.py
+```
+User Input
+  │
+[Rate Limiter]        — Redis token bucket, ZERO LLM
+[Safety Gate]         — Keyword + semantic embedding crisis check, PII scrub
+[Emotional Scorer]    — Deterministic intensity score, ZERO LLM
+[Path Classifier]     — Numeric complexity score → simple or complex
+  │
+  ├─ SIMPLE PATH (~55%)
+  │     Single 70B call → response
+  │
+  └─ COMPLEX PATH (~45%)
+        [ReAct Agent]  — 8B model, max 4 steps, hardened loop
+        [RAG Tools]    — ChromaDB semantic search, domain-filtered
+        [RAG Confidence Check] — avg_similarity gates bad retrieval
+        [Model Router] — Routes to 120B on high risk / emotion / low RAG confidence
+        Final 70B or 120B call → response
+  │
+[Response Validator]  — Length + empathy check, regenerates if needed
+[Output Normalizer]   — Strips clinical language, enforces tone
+[Observability]       — Latency, model used, RAG confidence, react steps
+[Memory Write]        — Async PostgreSQL/SQLite + Redis, never blocks response
 ```
 
-Debug Mode (see everything happening internally)
--------------------------------------------------
+**LLM call budget:** Crisis = 0 calls · Simple = 1 call · Complex = 2–3 calls · Weighted avg ~1.5 calls
 
-```powershell
-# Add to .env file: DEBUG_MODE=true
-# Or set temporarily:
-$env:DEBUG_MODE="true"
-python run_agent.py
+---
+
+## Key design decisions
+
+| Decision | Reason |
+|---|---|
+| Deterministic emotional scorer | Circular dependency if read from LLM output |
+| 8B only for ReAct reasoning, never final response | Cost — 8B is cheap, 70B/120B write to humans |
+| Safety gate before everything, no feature flags | Safety is not a feature |
+| Rate limiter fails open if Redis is down | Never block a user because of infrastructure |
+| SQLite default, PostgreSQL-ready | Zero setup locally, swap one env var to scale |
+| Hinglish semantic safety anchors | Keyword regex misses indirect crisis phrases |
+
+---
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Orchestration | LangGraph |
+| LLM | Groq (llama-3.1-8b, llama-3.3-70b, openai/gpt-oss-120b) |
+| RAG | ChromaDB + all-MiniLM-L6-v2 |
+| DB | SQLite (default) → PostgreSQL (production) |
+| Cache / Rate limit | Redis |
+| API | FastAPI |
+| UI | Streamlit |
+
+---
+
+## Quickstart
+
+```bash
+python -m venv venv
+source venv/Scripts/activate   # Windows: venv\Scripts\activate
+
+pip install -e .
+
+cp .env.example .env
+# Add your GROQ_API_KEY
+
+# Start backend
+uvicorn app.main:app --reload
+
+# Start UI (separate terminal)
+streamlit run streamlit_app.py
 ```
 
-Debug mode shows:
-- Assessment tracker detecting symptoms
-- Which expert agents are consulted
-- Each expert's contribution and knowledge sources
-- Background PHQ-9/GAD-7 scoring
-- Conversation summaries and memory stats
-
-See `DEBUG_MODE.md` for complete debug documentation.
-
-Files
------
-- `collaborative_agents.py`: Master agent and collaborative expert agents
-- `knowledge_base.py`: RAG system with semantic search
-- `conversation_memory.py`: Memory management with auto-summarization every 10 messages
-- `assessment_tracker.py`: Background PHQ-9/GAD-7 symptom tracking and scoring
-- `specialized_agents.py`: Original routing-based agents (alternative approach)
-- `agent.py`: Base agent class with memory
-- `llm_clients.py`: Groq and Gemini client wrappers
-- `run_agent.py`: Main chatbot entrypoint (uses collaborative system)
-- `view_sessions.py`: View stored conversations and assessment results
-- `knowledge/`: JSON knowledge bases for each expert domain
-- `sessions/`: Auto-created directory storing all conversation and assessment data
-- `test_cases.py`: Example test scenarios
-- `.env.example`: Environment variable template
-
-Viewing Session Data
----------------------
-```powershell
-python view_sessions.py
+Ingest knowledge base:
+```bash
+python -m app.rag.ingest
 ```
-Lists all sessions and allows you to view:
-- Conversation summaries (auto-generated every 10 messages)
-- Full message history
-- PHQ-9/GAD-7 estimated scores
-- Risk levels and detected symptoms
-- Clinical insights from the background assessment
 
-Example Interactions
---------------------
-**User:** "I've been feeling really down and can't sleep"
-→ **Consults:** Assessment Expert + Therapy Expert
-→ **Response:** Integrated answer with symptom evaluation and practical sleep/mood strategies
+---
 
-**User:** "I'm thinking about suicide"
-→ **Consults:** Crisis Expert + Assessment Expert
-→ **Response:** Immediate safety resources (988, emergency contacts) with risk assessment
+## Environment variables
 
-**User:** "I need to find a therapist but don't know where to start"
-→ **Consults:** Resource Expert
-→ **Response:** Step-by-step guidance on finding therapists, insurance, and cost options
+See [.env.example](.env.example) for all variables. Key ones:
 
-Important Notes
----------------
-- This is a support tool, NOT a replacement for professional mental health care
-- Crisis situations are prioritized and routed to emergency resources
-- All agents emphasize seeking professional help when appropriate
-- Add rate limiting, retries, and enhanced error handling for production use
-- Verify LLM provider API contracts as they may change
+```env
+GROQ_API_KEY=                          # required
+GROQ_FAST_MODEL=llama-3.1-8b-instant   # ReAct reasoning
+GROQ_QUALITY_MODEL=llama-3.3-70b-versatile  # simple path + fallback
+QUALITY_RESPONSE_MODEL=openai/gpt-oss-120b  # complex / high-risk path
+DATABASE_URL=sqlite+aiosqlite:///./mhc.db   # swap to postgres+asyncpg for prod
+```
+
+---
+
+## API
+
+```
+POST /chat
+  { "message": str, "user_id": str?, "session_id": str? }
+  → { "response", "emotions", "risk_level", "clinical_flags", "referral_needed", "session_id", "metrics" }
+
+GET /health
+  → { "status": "ok", "version": "4.0.0" }
+```
+
+---
+
+## Safety
+
+The safety gate is the most important code in this repo. It runs before every other node — no exceptions, no feature flags.
+
+- **Layer 1:** Deterministic keyword matching (Hindi + Hinglish + English, word-boundary safe)
+- **Layer 2:** Semantic embedding similarity against crisis anchor phrases
+- **Crisis response:** Always hardcoded. Never LLM-generated. Includes iCall (9152987821), Vandrevala (1860-2662-345), AASRA (9820466627).
+
+**Review the safety gate with a mental health professional who knows Indian linguistic context before any real users touch this system.**
+
+---
+
+## Project structure
+
+```
+app/
+├── graph/          LangGraph nodes + builder
+│   └── nodes/      rate_limiter, safety_gate, emotional_scorer, path_classifier,
+│                   direct_responder, react_agent, rag_confidence, model_router,
+│                   response_validator, output_normalizer, observability, memory_update
+├── tools/          ReAct tools (ALL zero LLM)
+├── safety/         Crisis detector, semantic safety, PII scrubber, sanitizer
+├── rag/            Embedder, ChromaDB, retriever, confidence scorer, ingest
+├── knowledge/      JSON knowledge bases (therapy, assessment, crisis, resource)
+├── prompts/        System prompts (companion, react, summary)
+├── services/       LLM service (Groq + fallback), session DB, Redis cache
+├── config.py       Pydantic Settings
+└── main.py         FastAPI app
+
+tests/
+├── test_safety/
+├── test_rag/
+├── test_graph/
+└── test_api/
+```
+
+---
+
+*Not a replacement for professional mental health care.*

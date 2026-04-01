@@ -1,0 +1,10 @@
+[
+  {"text": "PHQ-9 Question 1: Little interest or pleasure in doing things. Hindi: Kaam mein ya activities mein koi interest nahi.", "domain": "assessment"},
+  {"text": "PHQ-9 Question 2: Feeling down, depressed, or hopeless. Hindi: Udaas, depressed, ya bekarari feel karna.", "domain": "assessment"},
+  {"text": "PHQ-9 Question 3: Trouble falling or staying asleep, or sleeping too much. Hindi: Neend nahi aati ya bahut zyada neend aati hai.", "domain": "assessment"},
+  {"text": "GAD-7 is used to assess generalized anxiety disorder. 7 questions about worry, restlessness, and difficulty relaxing.", "domain": "assessment"},
+  {"text": "GAD-7 Question 1: Feeling nervous, anxious, or on edge. Hindi: Ghabrahaat, tension, ya bechain rehna.", "domain": "assessment"},
+  {"text": "Clinical flag: When user reports 5+ PHQ-9 symptoms for 2+ weeks, professional evaluation is strongly recommended.", "domain": "assessment"},
+  {"text": "Risk assessment signals: hopelessness + worthlessness + social withdrawal together suggest moderate-to-high risk.", "domain": "assessment"},
+  {"text": "Indian context: Board exam pressure, JEE/NEET failure, family expectations, and financial stress are strong contextual risk amplifiers.", "domain": "assessment"}
+]

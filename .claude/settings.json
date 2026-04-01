@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/d/mhc-agentic/venv/Scripts/python -c ':*)",
+      "Bash(python -c \"from app.main import app; print\\('imports OK'\\)\")",
+      "Bash(git -C d:/mhc-agentic remote -v)",
+      "Bash(rm -f agent.py assessment_tracker.py collaborative_agents.py conversation_memory.py demo.py knowledge_base.py llm_clients.py mood_tracker.py nlp_enhancements.py run_agent.py specialized_agents.py test_cases.py test_emotional_intelligence.py test_pipeline.py verify_safety.py view_sessions.py)",
+      "Bash(rm -f AGENT_LIGHTNING_FULL.md AGENT_LIGHTNING_GUIDE.md ARCHITECTURE_DEEP_DIVE.html ARCHITECTURE_DEEP_DIVE.md DEBUG_MODE.md DEPLOYMENT_GUIDE.md EMOTIONAL_INTELLIGENCE_UPGRADE.md NEW_THINGS_ADDED.md PARLANT_GUIDE.md QUICKSTART.md example_workflow.md requirements.txt)",
+      "Bash(rm -rf agent_lightning core instrumentation knowledge learned_policy optimized_prompts parlant_integration parlant-data safety scripts sessions tools _legacy)",
+      "Bash(rm -f *.png mhc.db)"
+    ]
+  }
+}

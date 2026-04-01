@@ -1,0 +1,48 @@
+{
+  "hard_crisis": [
+    "marna chahta hoon", "marna chahti hoon",
+    "khatam kar loon apne aap ko", "khatam kar leti hoon apne aap ko",
+    "zindagi khatam karna chahta hoon", "zindagi khatam karna chahti hoon",
+    "suicide karna chahta hoon", "suicide karna chahti hoon",
+    "jeena nahi chahta", "jeena nahi chahti",
+    "mar jaana chahta hoon", "mar jaana chahti hoon",
+    "khud ko hurt karna chahta hoon", "khud ko hurt karna chahti hoon",
+    "kill myself", "end my life", "want to die", "don't want to live",
+    "bas sab khatam ho jaye", "so jaana permanently",
+    "bina mujhare sab theek rahenge"
+  ],
+  "soft_crisis": [
+    "kuch feel nahi hota",
+    "zindagi se thak gaya", "zindagi se thak gayi",
+    "sone dedo mujhe",
+    "sab khatam ho jata toh acha hota",
+    "koi nahi hai mera",
+    "meri kisi ko zaroorat nahi",
+    "sabke liye burden hoon",
+    "everything is pointless",
+    "no reason to continue",
+    "nobody cares about me"
+  ],
+  "contextual": [
+    "bahut akela lag raha hai",
+    "sab bekaar hai",
+    "koi samajhta nahi",
+    "bahut dard ho raha hai",
+    "kuch bhi acha nahi lagta",
+    "rona aa raha hai bina wajah",
+    "feel so empty",
+    "can't go on",
+    "so tired of everything"
+  ],
+  "indian_context": [
+    "board exams fail ho gaya",
+    "jee fail ho gaya",
+    "neet fail ho gaya",
+    "ghar waale ka pressure",
+    "shaadi ka pressure",
+    "log kya kahenge",
+    "paisa nahi",
+    "job nahi mili",
+    "pagal nahi hoon"
+  ]
+}

@@ -1,34 +1,36 @@
-# Large binary files
-Antigravity.exe
-*.pdf
-
-# Test outputs
-test_output.txt
-
-# Environment files (contains secrets)
+# Environment (contains secrets)
 .env
 
-# Session data (may contain PII)
-sessions/
+# Database
+*.db
+*.sqlite
 
-# Traces (may contain user data)
+# Vector store
+chroma_db/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Session / PII data
+sessions/
 traces/
-test_traces/
 
 # IDE
 .vscode/
 .idea/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-*.egg-info/
-
 # OS
 .DS_Store
 Thumbs.db
+
+# Misc
+*.pdf
+*.png
+*.html

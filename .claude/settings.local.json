@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /d/mhc-agentic/*.py)",
+      "Bash(ls -la /d/mhc-agentic/*.md)",
+      "Bash(wc -l /d/mhc-agentic/*.py)",
+      "Bash(grep -r \"async def\\\\|asyncio\\\\|ThreadPool\\\\|Pool\\\\|Queue\\\\|Lock\\\\|threading\\\\|concurrent\" /d/mhc-agentic --include=\"*.py\" ! -path \"*/venv/*\")",
+      "Bash(cat EOF /d/mhc-agentic/ EOF find /d/mhc-agentic -maxdepth 3 -type d -not -path */.* -not -path */venv/* -not -path */__pycache__/*)",
+      "Bash(grep -r \"try\\\\|except\\\\|raise\\\\|finally\" /d/mhc-agentic --include=\"*.py\" ! -path \"*/venv/*\")",
+      "Bash(ls -1 /d/mhc-agentic/tools/*.py)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs cat:*)",
+      "Bash(grep -r \"logging\\\\|logger\\\\|log\\\\|print\\\\|stderr\" /d/mhc-agentic --include=\"*.py\" ! -path \"*/venv/*\")",
+      "Bash(pip show:*)",
+      "Bash(python -c \"import langgraph\")",
+      "Bash(cp -r /d/mhc-agentic/app /d/mhc-agentic/legacy/)",
+      "Bash(cp -r /d/mhc-agentic/core /d/mhc-agentic/legacy/)",
+      "Bash(cp -r /d/mhc-agentic/safety /d/mhc-agentic/legacy/)",
+      "Bash(cp -r /d/mhc-agentic/tools /d/mhc-agentic/legacy/)",
+      "Bash(cp -r /d/mhc-agentic/knowledge /d/mhc-agentic/legacy/)",
+      "Bash(python -c \"from app.config import settings; print\\('config OK'\\)\")",
+      "Bash(/d/mhc-agentic/venv/Scripts/python -c \"from app.config import settings; print\\('config OK'\\)\")",
+      "Bash(/d/mhc-agentic/venv/Scripts/python -c \"from app.config import settings; print\\('config OK'\\); print\\('groq_fast_model:', settings.groq_fast_model\\)\")",
+      "Bash(/d/mhc-agentic/venv/Scripts/python -c ':*)",
+      "Bash(/d/mhc-agentic/venv/Scripts/python -c \"import pkg_resources; print\\([p.project_name for p in pkg_resources.working_set]\\)\")",
+      "Bash(/d/mhc-agentic/venv/Scripts/pip list:*)"
+    ]
+  }
+}
