@@ -54,8 +54,8 @@ async def chat(request: ChatRequest):
     session_id = request.session_id or str(uuid.uuid4())
 
     try:
-        # Load prior session context
-        history = await session_svc.get_recent_history(user_id, session_id, n=5)
+        # Load prior context — history across ALL sessions for this user (last 5 turns)
+        history = await session_svc.get_recent_history(user_id, session_id=None, n=5)
         summary = await session_svc.get_latest_summary(user_id)
         last_risk = history[-1]["risk_level"] if history else "low"
 

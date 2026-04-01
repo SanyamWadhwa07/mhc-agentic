@@ -6,6 +6,8 @@ st.set_page_config(page_title="MHC - Mental Health Companion", page_icon="💙")
 st.title("💙 Mental Health Companion")
 st.caption("Ek safe space — apni baat karo, bina judge ke.")
 
+if "user_id" not in st.session_state:
+    st.session_state.user_id = str(uuid.uuid4())  # persists for this browser tab
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 if "messages" not in st.session_state:
@@ -27,6 +29,7 @@ if prompt := st.chat_input("Kya chal raha hai?"):
                     "http://localhost:8000/chat",
                     json={
                         "message": prompt,
+                        "user_id": st.session_state.user_id,
                         "session_id": st.session_state.session_id,
                     },
                     timeout=30
