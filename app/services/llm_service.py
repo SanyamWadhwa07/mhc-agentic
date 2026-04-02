@@ -22,7 +22,7 @@ class LLMService:
         kwargs = {
             "model": model,
             "messages": messages,
-            "temperature": 0.7,
+            "temperature": 0.75,
             "max_tokens": 1024,
         }
         if response_format:

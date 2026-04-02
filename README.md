@@ -52,6 +52,7 @@ User Input
 | Rate limiter fails open if Redis is down | Never block a user because of infrastructure |
 | SQLite default, PostgreSQL-ready | Zero setup locally, swap one env var to scale |
 | Hinglish semantic safety anchors | Keyword regex misses indirect crisis phrases |
+| Companion prompt rewritten v2 | Shorter, no opener word repetition, strict 3-sentence + 1-question rule |
 
 ---
 
@@ -60,7 +61,7 @@ User Input
 | Layer | Technology |
 |---|---|
 | Orchestration | LangGraph |
-| LLM | Groq (llama-3.1-8b, llama-3.3-70b, openai/gpt-oss-120b) |
+| LLM | Groq (llama-4-scout-17b ReAct, llama-3.3-70b simple path, openai/gpt-oss-120b complex/high-risk) |
 | RAG | ChromaDB + all-MiniLM-L6-v2 |
 | DB | SQLite (default) → PostgreSQL (production) |
 | Cache / Rate limit | Redis |
@@ -99,11 +100,11 @@ python -m app.rag.ingest
 See [.env.example](.env.example) for all variables. Key ones:
 
 ```env
-GROQ_API_KEY=                          # required
-GROQ_FAST_MODEL=llama-3.1-8b-instant   # ReAct reasoning
-GROQ_QUALITY_MODEL=llama-3.3-70b-versatile  # simple path + fallback
-QUALITY_RESPONSE_MODEL=openai/gpt-oss-120b  # complex / high-risk path
-DATABASE_URL=sqlite+aiosqlite:///./mhc.db   # swap to postgres+asyncpg for prod
+GROQ_API_KEY=                                              # required
+GROQ_FAST_MODEL=meta-llama/llama-4-scout-17b-16e-instruct  # ReAct reasoning
+GROQ_QUALITY_MODEL=llama-3.3-70b-versatile                 # simple path + fallback
+QUALITY_RESPONSE_MODEL=openai/gpt-oss-120b                 # complex / high-risk path
+DATABASE_URL=sqlite+aiosqlite:///./mhc.db                  # swap to postgres+asyncpg for prod
 ```
 
 ---
@@ -140,7 +141,8 @@ app/
 ├── graph/          LangGraph nodes + builder
 │   └── nodes/      rate_limiter, safety_gate, emotional_scorer, path_classifier,
 │                   direct_responder, react_agent, rag_confidence, model_router,
-│                   response_validator, output_normalizer, observability, memory_update
+│                   response_validator, output_normalizer, observability,
+│                   memory_update, profile_extractor
 ├── tools/          ReAct tools (ALL zero LLM)
 ├── safety/         Crisis detector, semantic safety, PII scrubber, sanitizer
 ├── rag/            Embedder, ChromaDB, retriever, confidence scorer, ingest
@@ -155,6 +157,8 @@ tests/
 ├── test_rag/
 ├── test_graph/
 └── test_api/
+
+run_crisis_test.py   — 20-turn end-to-end conversation simulation (crisis arc)
 ```
 
 ---

@@ -5,9 +5,9 @@ from pydantic import Field
 class Settings(BaseSettings):
     # LLM
     groq_api_key: str = ""
-    groq_fast_model: str = "llama-3.1-8b-instant"
+    groq_fast_model: str = "meta-llama/llama-4-scout-17b-16e-instruct"
     groq_quality_model: str = "llama-3.3-70b-versatile"
-    quality_response_model: str = "llama-3.3-70b-versatile"  # fallback if no gpt-oss-120b access
+    quality_response_model: str = "openai/gpt-oss-120b"
 
     # RAG
     chroma_persist_dir: str = "./chroma_db"
