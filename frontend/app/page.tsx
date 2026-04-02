@@ -129,7 +129,7 @@ export default function Home() {
       setTimeout(() => setAvatarState("idle"), 2800);
 
       let reply = data.response;
-      if (data.referral_needed) {
+      if (data.risk_level === "high") {
         reply += "\n\n💙 Professional support:\n• iCall: 9152987821\n• Vandrevala: 1860-2662-345";
       }
 

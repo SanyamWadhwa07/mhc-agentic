@@ -94,6 +94,6 @@ class ProfileService:
         if profile.get("people_mentioned"):
             parts.append(f"People in their life: {', '.join(profile['people_mentioned'][:5])}")
         if profile.get("ongoing_situations"):
-            parts.append(f"Ongoing situations (ask about these naturally if relevant): {', '.join(profile['ongoing_situations'][:3])}")
+            parts.append(f"Background context (use ONLY if user explicitly references it — never assume current message is about these): {', '.join(profile['ongoing_situations'][:3])}")
 
         return "\n".join(parts) if parts else ""
