@@ -71,8 +71,8 @@ async def chat(request: ChatRequest):
             history = cached.get("history", [])
             summary = cached.get("summary", "")
         else:
-            history = await session_svc.get_recent_history(user_id, session_id=None, n=5)
-            summary = await session_svc.get_latest_summary(user_id)
+            history = await session_svc.get_recent_history(user_id, session_id=session_id, n=5)
+            summary = await session_svc.get_latest_summary(user_id, session_id=session_id)
 
         last_risk = history[-1]["risk_level"] if history else "low"
 

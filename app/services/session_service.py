@@ -70,9 +70,11 @@ class SessionService:
 
     async def get_recent_history(self, user_id: str, session_id: Optional[str], n: int = 5) -> List[Dict]:
         async with AsyncSession(self.engine) as session:
+            stmt = select(Turn).where(Turn.user_id == user_id)
+            if session_id:
+                stmt = stmt.where(Turn.session_id == session_id)
             stmt = (
-                select(Turn)
-                .where(Turn.user_id == user_id)
+                stmt
                 .order_by(Turn.created_at.desc())
                 .limit(n)
             )
@@ -92,11 +94,13 @@ class SessionService:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def get_latest_summary(self, user_id: str) -> Optional[str]:
+    async def get_latest_summary(self, user_id: str, session_id: Optional[str] = None) -> Optional[str]:
         async with AsyncSession(self.engine) as session:
+            stmt = select(SessionSummary).where(SessionSummary.user_id == user_id)
+            if session_id:
+                stmt = stmt.where(SessionSummary.session_id == session_id)
             stmt = (
-                select(SessionSummary)
-                .where(SessionSummary.user_id == user_id)
+                stmt
                 .order_by(SessionSummary.created_at.desc())
                 .limit(1)
             )

@@ -52,7 +52,7 @@ async def react_agent_node(state):
         prompt = build_react_prompt(context, summary=summary)
 
         try:
-            raw = await llm.call(
+            raw, _ = await llm.call(
                 model=settings.groq_fast_model,  # 8B for reasoning
                 messages=prompt,
                 response_format={"type": "json_object"}
@@ -70,7 +70,7 @@ async def react_agent_node(state):
             log.warning("invalid_tool_schema", step=steps, action=action)
             # Retry once
             try:
-                raw = await llm.call(
+                raw, _ = await llm.call(
                     model=settings.groq_fast_model,
                     messages=prompt,
                     response_format={"type": "json_object"}
