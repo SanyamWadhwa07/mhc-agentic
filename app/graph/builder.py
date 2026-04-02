@@ -12,6 +12,7 @@ from app.graph.nodes.response_validator import response_validator_node
 from app.graph.nodes.output_normalizer import output_normalizer_node
 from app.graph.nodes.observability import observability_node
 from app.graph.nodes.memory_update import memory_update_node
+from app.graph.nodes.profile_extractor import profile_extractor_node
 
 
 def route_after_rate_limiter(state):
@@ -48,6 +49,7 @@ def build_graph():
     graph.add_node("output_normalizer", output_normalizer_node)
     graph.add_node("observability", observability_node)
     graph.add_node("memory_update", memory_update_node)
+    graph.add_node("profile_extractor", profile_extractor_node)
 
     graph.set_entry_point("rate_limiter")
 
@@ -61,7 +63,8 @@ def build_graph():
         "emotional_scorer": "emotional_scorer"
     })
 
-    graph.add_edge("emotional_scorer", "path_classifier")
+    graph.add_edge("emotional_scorer", "profile_extractor")
+    graph.add_edge("profile_extractor", "path_classifier")
 
     graph.add_conditional_edges("path_classifier", route_after_classifier, {
         "model_router": "model_router",

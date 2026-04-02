@@ -11,8 +11,9 @@ async def direct_responder_node(state):
     history = state.get("session_history", [])[-5:]
     summary = state.get("session_summary", "")
     emotional_intensity = state.get("emotional_intensity", 0.0)
+    user_profile = state.get("user_profile", "")
 
-    prompt = build_companion_prompt(message, history, summary, emotional_intensity)
+    prompt = build_companion_prompt(message, history, summary, emotional_intensity, user_profile=user_profile)
 
     try:
         import json
@@ -25,14 +26,19 @@ async def direct_responder_node(state):
 
         data = json.loads(result)
 
+        risk_level = data.get("risk_level", "low")
+        referral_needed = data.get("referral_needed", False)
+        if risk_level in ["medium", "high"]:
+            referral_needed = True  # deterministic — never trust LLM on this
+
         return {
             **state,
-            "model_used": actual_model,  # reflects actual model, including fallbacks
+            "model_used": actual_model,
             "response": data.get("response", ""),
             "emotions": data.get("emotions", []),
-            "risk_level": data.get("risk_level", "low"),
+            "risk_level": risk_level,
             "clinical_flags": data.get("clinical_flags", []),
-            "referral_needed": data.get("referral_needed", False)
+            "referral_needed": referral_needed,
         }
     except Exception as e:
         log.error("direct_responder_error", error=str(e))

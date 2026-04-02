@@ -44,11 +44,12 @@ async def react_agent_node(state):
     tool_results = []
     steps = 0
 
+    summary = state.get("session_summary") or ""
     context = {"message": message, "history": history, "tool_results": tool_results}
 
     while steps < settings.react_max_steps:
         steps += 1
-        prompt = build_react_prompt(context)
+        prompt = build_react_prompt(context, summary=summary)
 
         try:
             raw = await llm.call(

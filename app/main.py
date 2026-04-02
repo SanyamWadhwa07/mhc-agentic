@@ -3,12 +3,13 @@ import uuid
 import structlog
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from app.graph.builder import mhc_graph
 from app.graph.state import MHCState
 from app.config import settings
 from app.services.session_service import SessionService
+from app.services.cache_service import CacheService
 
 log = structlog.get_logger()
 app = FastAPI(title="MHC Agentic V4", version="4.0.0")
@@ -21,19 +22,25 @@ app.add_middleware(
 )
 
 session_svc = SessionService()
+cache_svc = CacheService()
 
 
 @app.on_event("startup")
 async def startup():
     try:
         await session_svc.init_db()
+        # Import UserProfile so its table is created via shared Base metadata
+        from app.services.profile_service import UserProfile  # noqa: F401
+        async with session_svc.engine.begin() as conn:
+            from app.services.session_service import Base
+            await conn.run_sync(Base.metadata.create_all)
         log.info("database_initialized")
     except Exception as e:
         log.warning("database_init_failed", error=str(e))
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=2000)
     user_id: Optional[str] = None
     session_id: Optional[str] = None
 
@@ -54,9 +61,19 @@ async def chat(request: ChatRequest):
     session_id = request.session_id or str(uuid.uuid4())
 
     try:
-        # Load prior context — history across ALL sessions for this user (last 5 turns)
-        history = await session_svc.get_recent_history(user_id, session_id=None, n=5)
-        summary = await session_svc.get_latest_summary(user_id)
+        # Try Redis cache first; fall back to DB on miss or Redis unavailability
+        try:
+            cached = await cache_svc.get_session(session_id) if request.session_id else {}
+        except Exception:
+            cached = {}
+
+        if cached:
+            history = cached.get("history", [])
+            summary = cached.get("summary", "")
+        else:
+            history = await session_svc.get_recent_history(user_id, session_id=None, n=5)
+            summary = await session_svc.get_latest_summary(user_id)
+
         last_risk = history[-1]["risk_level"] if history else "low"
 
         initial_state: MHCState = {
@@ -79,6 +96,7 @@ async def chat(request: ChatRequest):
             "session_history": history,
             "session_summary": summary,
             "last_risk_level": last_risk,
+            "user_profile": "",
             "response": "",
             "emotions": [],
             "risk_level": "low",
@@ -112,6 +130,21 @@ async def chat(request: ChatRequest):
                 session_id=session_id,
                 metrics={}
             )
+
+        # Write updated session to Redis cache (best-effort, non-blocking)
+        if not result.get("is_rate_limited") and not result.get("is_crisis"):
+            try:
+                new_turn = {
+                    "message": request.message,
+                    "response": result["response"],
+                    "risk_level": result.get("risk_level", "low"),
+                }
+                await cache_svc.set_session(session_id, {
+                    "history": (history + [new_turn])[-5:],
+                    "summary": summary or "",
+                })
+            except Exception:
+                pass  # cache failure is non-fatal
 
         return ChatResponse(
             response=result["response"],

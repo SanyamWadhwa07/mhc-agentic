@@ -34,6 +34,7 @@ class MHCState(TypedDict):
     session_history: List[Dict[str, Any]]
     session_summary: Optional[str]
     last_risk_level: str
+    user_profile: str  # formatted profile string for companion prompt
 
     # Output
     response: str

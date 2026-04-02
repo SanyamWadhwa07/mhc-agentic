@@ -41,8 +41,15 @@ async def _maybe_summarize(state: dict):
         log.error("summary_failed", error=str(e))
 
 
+def _log_task_exception(task: asyncio.Task):
+    if not task.cancelled() and task.exception():
+        log.error("background_task_failed", task=task.get_name(), error=str(task.exception()))
+
+
 async def memory_update_node(state):
-    # Fire and forget — non-blocking
-    asyncio.create_task(_write_to_db(state))
-    asyncio.create_task(_maybe_summarize(state))
+    # Fire and forget — non-blocking, but exceptions are now logged
+    t1 = asyncio.create_task(_write_to_db(state), name="write_to_db")
+    t2 = asyncio.create_task(_maybe_summarize(state), name="maybe_summarize")
+    t1.add_done_callback(_log_task_exception)
+    t2.add_done_callback(_log_task_exception)
     return state

@@ -9,7 +9,13 @@
     "khud ko hurt karna chahta hoon", "khud ko hurt karna chahti hoon",
     "kill myself", "end my life", "want to die", "don't want to live",
     "bas sab khatam ho jaye", "so jaana permanently",
-    "bina mujhare sab theek rahenge"
+    "bina mujhare sab theek rahenge",
+    "mrna chahta", "mrna chahti",
+    "end it all",
+    "khatam kar lunga", "khatam kar lungi",
+    "nahi rehna chahta", "nahi rehna chahti",
+    "suicide kar lunga", "suicide kar lungi",
+    "overdose kar lunga"
   ],
   "soft_crisis": [
     "kuch feel nahi hota",
@@ -21,7 +27,22 @@
     "sabke liye burden hoon",
     "everything is pointless",
     "no reason to continue",
-    "nobody cares about me"
+    "nobody cares about me",
+    "sab bekaar hai yaar",
+    "kya fayda hai kuch bhi karne ka",
+    "bahut thak gayi hoon yaar",
+    "bas ho gaya ab",
+    "aur nahi jhel sakta",
+    "ek baar sab ruk jata toh",
+    "kuch acha nahi lagta aajkal",
+    "zindagi mein koi point nahi",
+    "akela feel hota hai hamesha",
+    "dil nahi lagta kisi cheez mein",
+    "uthna bhi mushkil ho gaya hai",
+    "khana nahi kha raha theek se",
+    "so nahi pa raha hoon",
+    "I just want it to stop",
+    "can't do this anymore"
   ],
   "contextual": [
     "bahut akela lag raha hai",
@@ -32,7 +53,15 @@
     "rona aa raha hai bina wajah",
     "feel so empty",
     "can't go on",
-    "so tired of everything"
+    "so tired of everything",
+    "NEET fail ho gaya",
+    "CAT fail ho gaya",
+    "UPSC nahi hua",
+    "job se nikal diya",
+    "breakup ho gaya yaar",
+    "relationship khatam ho gayi",
+    "ghar waalo ne reject kar diya",
+    "shaadi toot gayi"
   ],
   "indian_context": [
     "board exams fail ho gaya",

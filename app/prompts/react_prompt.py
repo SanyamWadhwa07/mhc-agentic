@@ -20,10 +20,11 @@ RULES:
 - Never generate the final response to the user — only decide what to retrieve
 - Maximum 4 tool calls total
 - Use English queries even if the user wrote in Hinglish
-- Always check RiskEvaluator if the user mentions distress"""
+- Always check RiskEvaluator if the user mentions distress
+- CRISIS SHORT-CIRCUIT: If the user message contains clear crisis signals (mentions of suicide, self-harm, ending life, marna, khatam, hurt myself), set {"done": true} immediately — do not waste steps on tool calls. The crisis handler will take over."""
 
 
-def build_react_prompt(context: dict) -> List[Dict]:
+def build_react_prompt(context: dict, summary: str = "") -> List[Dict]:
     tool_results_text = ""
     for tr in context.get("tool_results", []):
         if "error" not in tr:
@@ -31,8 +32,12 @@ def build_react_prompt(context: dict) -> List[Dict]:
         else:
             tool_results_text += f"\n{tr['tool']}: ERROR - {tr['error']}"
 
-    user_message = f"""User message: {context['message']}
+    summary_block = ""
+    if summary:
+        summary_block = f"\nSession history summary:\n{summary}\n"
 
+    user_message = f"""User message: {context['message']}
+{summary_block}
 Tool results so far:{tool_results_text if tool_results_text else ' None'}
 
 What should I retrieve next? (or {{"done": true}} if enough information gathered)"""

@@ -9,6 +9,10 @@ from app.config import settings
 
 log = structlog.get_logger()
 
+# Module-level engine singleton — avoids creating a new engine per request.
+# SQLite (aiosqlite) uses StaticPool by default and does not support pool_size/max_overflow.
+_engine = create_async_engine(settings.database_url, echo=settings.debug_mode)
+
 
 class Base(DeclarativeBase):
     pass
@@ -42,7 +46,7 @@ class SessionSummary(Base):
 
 class SessionService:
     def __init__(self):
-        self.engine = create_async_engine(settings.database_url, echo=settings.debug_mode)
+        self.engine = _engine  # reuse module-level singleton
 
     async def init_db(self):
         async with self.engine.begin() as conn:
