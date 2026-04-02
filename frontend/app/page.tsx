@@ -82,12 +82,15 @@ export default function Home() {
 
   /* Init from localStorage */
   useEffect(() => {
+    // user_id persists across sessions (identity)
     let uid = ls<string>("mhc_uid", "");
     if (!uid) { uid = uuidv4(); lsSet("mhc_uid", uid); }
     setUserId(uid);
 
-    let sid = ls<string>("mhc_sid", "");
-    if (!sid) { sid = uuidv4(); lsSet("mhc_sid", sid); }
+    // session_id is ALWAYS fresh on page load — never reuse old session.
+    // Reusing mhc_sid caused the backend to load old history/risk into a
+    // visually-fresh conversation (session isolation leakage).
+    const sid = uuidv4();
     setSessionId(sid);
 
     setSessions(ls<StoredSession[]>("mhc_sessions", []));
@@ -174,7 +177,7 @@ export default function Home() {
 
     const sid = uuidv4();
     setSessionId(sid);
-    lsSet("mhc_sid", sid);
+    // Don't persist to localStorage — page load always starts fresh
     setMessages([{ ...GREETING, id: uuidv4(), ts: Date.now() }]);
     setMoodHistory([]);
     setLastMetrics(null);
@@ -182,10 +185,11 @@ export default function Home() {
     setAvatarState("idle");
   }, [messages, moodHistory, sessionId, sessions]);
 
-  /* Load past session */
+  /* Load past session — shows old messages in UI but forks to a fresh session_id
+     so old risk/history doesn't contaminate backend routing for new messages */
   const handleLoadSession = (s: StoredSession) => {
-    setSessionId(s.id);
-    lsSet("mhc_sid", s.id);
+    const freshSid = uuidv4();
+    setSessionId(freshSid);
     setMessages(s.messages);
     setMoodHistory(s.moodHistory);
   };

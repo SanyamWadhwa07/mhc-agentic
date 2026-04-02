@@ -68,11 +68,15 @@ class SessionService:
             session.add(turn)
             await session.commit()
 
-    async def get_recent_history(self, user_id: str, session_id: Optional[str], n: int = 5) -> List[Dict]:
+    async def get_recent_history(self, user_id: str, session_id: str, n: int = 5) -> List[Dict]:
+        """session_id is required — never fetch cross-session history."""
+        if not session_id:
+            return []
         async with AsyncSession(self.engine) as session:
-            stmt = select(Turn).where(Turn.user_id == user_id)
-            if session_id:
-                stmt = stmt.where(Turn.session_id == session_id)
+            stmt = select(Turn).where(
+                Turn.user_id == user_id,
+                Turn.session_id == session_id,
+            )
             stmt = (
                 stmt
                 .order_by(Turn.created_at.desc())
@@ -94,11 +98,15 @@ class SessionService:
             result = await session.execute(stmt)
             return result.scalar() or 0
 
-    async def get_latest_summary(self, user_id: str, session_id: Optional[str] = None) -> Optional[str]:
+    async def get_latest_summary(self, user_id: str, session_id: str) -> Optional[str]:
+        """session_id is required — never fetch cross-session summaries."""
+        if not session_id:
+            return None
         async with AsyncSession(self.engine) as session:
-            stmt = select(SessionSummary).where(SessionSummary.user_id == user_id)
-            if session_id:
-                stmt = stmt.where(SessionSummary.session_id == session_id)
+            stmt = select(SessionSummary).where(
+                SessionSummary.user_id == user_id,
+                SessionSummary.session_id == session_id,
+            )
             stmt = (
                 stmt
                 .order_by(SessionSummary.created_at.desc())

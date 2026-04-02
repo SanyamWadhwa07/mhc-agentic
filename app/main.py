@@ -76,7 +76,7 @@ async def chat(request: ChatRequest):
     try:
         # Try Redis cache first; fall back to DB on miss or Redis unavailability
         try:
-            cached = await cache_svc.get_session(session_id) if request.session_id else {}
+            cached = await cache_svc.get_session(user_id, session_id) if request.session_id else {}
         except Exception:
             cached = {}
 
@@ -163,7 +163,7 @@ async def chat(request: ChatRequest):
                 "response": result["response"],
                 "risk_level": result.get("risk_level", "low"),
             }
-            await cache_svc.set_session(session_id, {
+            await cache_svc.set_session(user_id, session_id, {
                 "history": (history + [new_turn])[-5:],
                 "summary": summary or "",
             })

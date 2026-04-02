@@ -15,19 +15,28 @@ class CacheService:
             self._redis = aioredis.from_url(settings.redis_url)
         return self._redis
 
-    async def get_session(self, session_id: str) -> dict:
+    @staticmethod
+    def _key(user_id: str, session_id: str) -> str:
+        # Scoped to both user_id AND session_id — prevents cross-user leakage
+        return f"session:{user_id}:{session_id}"
+
+    async def get_session(self, user_id: str, session_id: str) -> dict:
+        if not user_id or not session_id:
+            return {}
         try:
             redis = await self._get_redis()
-            data = await redis.get(f"session:{session_id}")
+            data = await redis.get(self._key(user_id, session_id))
             return json.loads(data) if data else {}
         except Exception as e:
             log.warning("cache_get_failed", error=str(e))
             return {}
 
-    async def set_session(self, session_id: str, data: dict, ttl: int = 3600):
+    async def set_session(self, user_id: str, session_id: str, data: dict, ttl: int = 3600):
+        if not user_id or not session_id:
+            return
         try:
             redis = await self._get_redis()
-            await redis.setex(f"session:{session_id}", ttl, json.dumps(data))
+            await redis.setex(self._key(user_id, session_id), ttl, json.dumps(data))
         except Exception as e:
             log.warning("cache_set_failed", error=str(e))
 
