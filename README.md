@@ -67,7 +67,7 @@ User Input
 | DB | SQLite (default) → PostgreSQL (production) |
 | Cache / Rate limit | Redis |
 | API | FastAPI |
-| UI | Streamlit |
+| UI | Next.js 14 + Tailwind CSS + Framer Motion |
 
 ---
 
@@ -85,9 +85,11 @@ cp .env.example .env
 # Start backend
 uvicorn app.main:app --reload
 
-# Start UI (separate terminal)
-streamlit run streamlit_app.py
+# Start frontend (separate terminal)
+cd frontend && npm install && npm run dev
 ```
+
+Frontend runs at http://localhost:3000 — proxies `/api/*` to FastAPI at `localhost:8000`.
 
 Ingest knowledge base:
 ```bash
