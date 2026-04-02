@@ -22,7 +22,7 @@ class LLMService:
         kwargs = {
             "model": model,
             "messages": messages,
-            "temperature": 0.75,
+            "temperature": settings.llm_temperature,
             "max_tokens": 1024,
         }
         if response_format:
@@ -58,14 +58,14 @@ class LLMService:
                 except Exception as e3:
                     log.error("fallback_fast_failed", error=str(e3))
 
-            # Last resort template
+            # Last resort template — keep neutral, never show helplines for infra failures
             log.error("all_models_failed", using="template")
             self.fallback_triggered = True
             template = {
-                "response": "Main abhi tumhare saath hoon. Thodi si technical problem aa gayi hai, but main sun raha/rahi hoon. Agar tumhe turant madad chahiye, please iCall (9152987821) ya Vandrevala (1860-2662-345) pe call karo. 💙",
-                "emotions": ["distress"],
-                "risk_level": "medium",
+                "response": "Yaar, thodi technical problem aa gayi. Ek second ruko, phir try karo? 💙",
+                "emotions": [],
+                "risk_level": "low",
                 "clinical_flags": [],
-                "referral_needed": True
+                "referral_needed": False
             }
             return json.dumps(template), "template"

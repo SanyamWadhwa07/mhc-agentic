@@ -43,6 +43,15 @@ class MHCState(TypedDict):
     clinical_flags: List[str]
     referral_needed: bool
 
+    # Assessment
+    assessment_context: Optional[str]  # PHQ-9/GAD-7 severity string for prompt injection
+
+    # Journal
+    journal_context: Optional[str]  # recent journal entries for companion prompt
+
+    # RL / feedback
+    response_mode: str  # emotional | action | neutral — stored for feedback attribution
+
     # Observability
     metrics: Dict[str, Any]
     start_time: float

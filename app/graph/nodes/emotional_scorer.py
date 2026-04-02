@@ -54,9 +54,9 @@ async def emotional_scorer_node(state):
             blob = TextBlob(message)
             sentiment_score = abs(blob.sentiment.polarity)  # intensity, not valence
         else:
-            sentiment_score = 0.3
+            sentiment_score = 0.0  # neutral text → no signal, not 0.3
     except Exception:
-        sentiment_score = 0.3
+        sentiment_score = 0.0  # failure → no signal, not 0.3
 
     # Component 2: Legacy keyword intensity (0-1)
     keyword_hits = sum(1 for kw in HIGH_INTENSITY_KEYWORDS if kw in lower)

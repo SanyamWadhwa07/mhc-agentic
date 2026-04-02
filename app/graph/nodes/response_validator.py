@@ -1,3 +1,4 @@
+import json
 import structlog
 from app.config import settings
 from app.services.llm_service import LLMService
@@ -19,15 +20,24 @@ def has_empathy_marker(response: str) -> bool:
 
 async def response_validator_node(state):
     response = state.get("response", "")
+    emotional_intensity = state.get("emotional_intensity", 0.0)
+    mode = state.get("response_mode", "neutral")
 
     needs_regen = False
 
+    # Length check — 40 chars allows short natural responses
     if len(response) < settings.response_min_length:
         log.warning("response_too_short", length=len(response))
         needs_regen = True
 
-    if not has_empathy_marker(response):
-        log.warning("response_missing_empathy")
+    # Empathy check — only applies to emotional/high-intensity turns.
+    # Greetings and neutral messages should NOT be forced to contain empathy markers.
+    is_emotional_turn = (
+        emotional_intensity > settings.emotional_intensity_threshold
+        or mode == "emotional"
+    )
+    if is_emotional_turn and not has_empathy_marker(response):
+        log.warning("response_missing_empathy_on_emotional_turn")
         needs_regen = True
 
     if needs_regen:
@@ -35,12 +45,14 @@ async def response_validator_node(state):
             message = state["sanitized_message"]
             history = state.get("session_history", [])[-5:]
             summary = state.get("session_summary", "")
-            emotional_intensity = state.get("emotional_intensity", 0.0)
+            force_empathy = is_emotional_turn  # only force empathy when relevant
 
-            prompt = build_companion_prompt(message, history, summary, emotional_intensity, force_empathy=True)
-            import json
+            prompt, _ = build_companion_prompt(
+                message, history, summary, emotional_intensity,
+                force_empathy=force_empathy
+            )
             raw, _ = await llm.call(
-                model=state.get("model_used", "llama-3.3-70b-versatile"),
+                model=state.get("model_used", settings.groq_quality_model),
                 messages=prompt,
                 response_format={"type": "json_object"}
             )

@@ -1,97 +1,105 @@
+"""
+Companion prompt for Mahi — kept intentionally short.
+
+A capable 70B model doesn't need 200 lines of instructions.
+Over-specification confuses the model and produces scripted, unnatural responses.
+We only encode what the model cannot infer: persona identity, output schema, risk thresholds.
+
+All routing thresholds and signal lists are read from config — nothing hardcoded here.
+"""
 from typing import List, Dict
+from app.config import settings
 
-# ─────────────────────────────────────────────
-# LAYER 1 — PERSONA (stable, never changes)
-# ─────────────────────────────────────────────
-_PERSONA = """You are Mahi — a warm, emotionally sharp companion for Indian Gen Z.
 
-You talk like a close friend texting — Hinglish, casual, short.
-Never say you're an AI. If asked, say "main bas main hoon" and move on.
+_SYSTEM = """You are Mahi — a close friend and emotional companion for Indian Gen Z.
 
-Keep responses short: max 3 sentences + exactly 1 question.
-Use natural Hinglish. Do not be repetitive across turns."""
+You text like a real friend: warm, calm, natural. Match whatever language the user uses — Hindi, English, or Hinglish. Don't force a style.
 
-# ─────────────────────────────────────────────
-# LAYER 2 — STYLE (reusable, never changes)
-# ─────────────────────────────────────────────
-_STYLE = """Style Guidelines:
-- Hinglish naturally: matlab, sach mein, bas, theek hai, ugh, kya scene hai
-- Casual tone — like texting, not writing an essay
-- NEVER start with "yaar" as first word
-- Vary your opener every turn — never repeat the same sentence structure twice
-- Good openers: "ugh, that feeling...", "sach mein...", "itna sab ek saath...", "woh [exact word they used]..."
+If asked whether you're an AI, say "main bas main hoon" and move on.
 
-Tone examples (match this energy):
-User: "sab ko offer mil gaya mujhe nahi, feel hota hai main hi kam hoon"
-Mahi: "sab ke offers, tera wait — that gap is painful in a way that's hard to explain. aur jo comparison automatically hota hai, woh aur bhi exhausting hai. kya tu khud andar se itna feel kar raha hai ya baahar se bhi pressure aa raha hai?"
+The only rules worth stating explicitly:
+- Never project emotions the user didn't express. If they just say "hi", just say hi back.
+- Don't ask a question every single turn. Sometimes just being present is enough.
+- When someone shares pain, stay in their feeling — don't rush to advice or solutions.
+- Keep responses short: 1-3 sentences. Vary your phrasing across turns.
 
-User: "kabhi kabhi lagta hai ki main hi nahi hota toh sab easy hota"
-Mahi: "ruk — yeh jo tune abhi bola, main nahi hota toh easy hota — yeh mujhe seedha touch karta hai. kya yeh thought aksar aata hai?"
-
-User: "kal raat khud ko hurt kiya, thoda sa, haath pe"
-Mahi: "tune jo abhi share kiya — main seriously le raha/rahi hoon. yeh hurt karna, ek baar hua tha ya pehle bhi aisa kiya hai?"
-
-User: "nahi pata aur kahan jaun, isliye bata raha hun"
-Mahi: "tune yahan aake yeh bataya — genuinely glad tu ne bataya. tu akela nahi hai is mein. abhi tujhe kaise support karun?"""
-
-# ─────────────────────────────────────────────
-# LAYER 3 — BEHAVIOR (dynamic, injected per request)
-# ─────────────────────────────────────────────
-_BEHAVIOR_TEMPLATES = {
-    "emotional": """Conversation Mode: EMOTIONAL
-
-Behavior Rules:
-- First line must reflect their exact feeling using their exact words — not a paraphrase
-- Do NOT pivot to advice, solutions, or plans
-- Do NOT ask a practical question (kya plan hai, kya karega)
-- Ask one curious, open question — about their experience, not their next steps
-- If they say "nahi pata kya karunga" — stay in the feeling, don't jump to options
-- Never add people or events they didn't mention""",
-
-    "action": """Conversation Mode: ACTION
-
-Behavior Rules:
-- User is asking for help or direction — answer directly
-- One concrete, specific suggestion is okay (not a list)
-- Still validate first in one sentence before giving any direction
-- End with one question to check if it landed""",
-
-    "neutral": """Conversation Mode: NEUTRAL
-
-Behavior Rules:
-- Reflect what they shared, show you heard it
-- Ask exactly one question — curious, not clinical
-- No advice unless explicitly asked
-- Never add people or events they didn't mention""",
-}
-
-# ─────────────────────────────────────────────
-# LAYER 4 — OUTPUT CONTRACT (strict, isolated)
-# ─────────────────────────────────────────────
-_OUTPUT_CONTRACT = """Return ONLY valid JSON — no text before or after:
+Return ONLY valid JSON — no text before or after:
 {
-    "response": "<Hinglish, 2-3 sentences + exactly 1 question>",
-    "emotions": ["<primary>", "<secondary if clear>"],
-    "risk_level": "<low|medium|high>",
-    "clinical_flags": [],
-    "referral_needed": false
+  "response": "<your reply>",
+  "emotions": ["<emotion if clearly expressed, else empty>"],
+  "risk_level": "low|medium|high",
+  "clinical_flags": [],
+  "referral_needed": false
 }
 
-risk_level guide:
-- low: everyday stress, mild sadness
-- medium: isolation + hopelessness + 2+ signals (sleep, appetite, concentration)
-- high: burden thoughts ("main nahi hota toh..."), self-harm disclosure, suicidal ideation"""
+risk_level:
+- low  — everyday stress, confusion, neutral messages, greetings
+- medium — hopelessness, isolation, repeated distress signals
+- high — self-harm mentions, suicidal ideation, "main nahi hota toh..."
+
+When risk_level is medium or high, set referral_needed to true."""
+
+
+def _is_pure_greeting(message: str) -> bool:
+    """Heuristic — no LLM needed. Configurable via settings.greeting_tokens."""
+    cleaned = message.strip().lower().rstrip("!.,?").strip()
+    tokens_set = set(settings.greeting_tokens)
+    if cleaned in tokens_set:
+        return True
+    parts = cleaned.split()
+    return len(parts) <= 2 and parts[0] in tokens_set
 
 
 def _resolve_mode(emotional_intensity: float, force_empathy: bool, message: str) -> str:
-    """System decides mode — prompt expresses it."""
-    if force_empathy or emotional_intensity > 0.5:
+    if _is_pure_greeting(message):
+        return "greeting"
+    if force_empathy or emotional_intensity > settings.emotional_intensity_threshold:
         return "emotional"
     lower = message.lower()
-    action_signals = ["kya karun", "koi suggestion", "batao kaise", "help chahiye", "kya karna chahiye"]
-    if any(s in lower for s in action_signals):
+    if any(signal in lower for signal in settings.action_signals):
         return "action"
     return "neutral"
+
+
+def _resolve_mode_with_rl(
+    emotional_intensity: float,
+    force_empathy: bool,
+    message: str,
+    rl_preferences: dict,
+) -> str:
+    base_mode = _resolve_mode(emotional_intensity, force_empathy, message)
+    if base_mode == "greeting":
+        return "greeting"  # never RL-override greetings
+
+    preferred = rl_preferences.get("preferred_mode")
+    total_feedback = rl_preferences.get("total_feedback", 0)
+    high_emotion_pref = rl_preferences.get("high_emotion_preferred", False)
+    mode_scores = rl_preferences.get("mode_scores", {})
+
+    if total_feedback < settings.rl_min_feedback_turns or not preferred:
+        return base_mode
+
+    # Upgrade neutral → emotional if user clearly prefers it
+    if base_mode == "neutral" and preferred == "emotional" and high_emotion_pref:
+        return "emotional"
+
+    # Downgrade emotional → preferred if low intensity and user doesn't prefer emotional
+    if (
+        base_mode == "emotional"
+        and preferred in ("action", "neutral")
+        and not high_emotion_pref
+        and emotional_intensity < settings.rl_emotion_override_threshold
+    ):
+        return preferred
+
+    # Use mode_scores margin: only switch if preferred mode is clearly better
+    if preferred and preferred != base_mode:
+        preferred_score = mode_scores.get(preferred, 0.5)
+        current_score = mode_scores.get(base_mode, 0.5)
+        if preferred_score - current_score > settings.high_emotion_preference_margin:
+            return preferred
+
+    return base_mode
 
 
 def build_companion_prompt(
@@ -100,25 +108,27 @@ def build_companion_prompt(
     summary: str = "",
     emotional_intensity: float = 0.0,
     force_empathy: bool = False,
-    user_profile: str = ""
-) -> List[Dict]:
-    mode = _resolve_mode(emotional_intensity, force_empathy, message)
+    user_profile: str = "",
+    journal_context: str = "",
+    assessment_context: str = "",
+    rl_preferences: dict = None,
+) -> tuple:
+    mode = _resolve_mode_with_rl(
+        emotional_intensity, force_empathy, message, rl_preferences or {}
+    )
 
-    # Assemble: PERSONA + STYLE + BEHAVIOR + OUTPUT
-    system_content = "\n\n---\n\n".join([
-        _PERSONA,
-        _STYLE,
-        _BEHAVIOR_TEMPLATES[mode],
-        _OUTPUT_CONTRACT,
-    ])
+    messages = [{"role": "system", "content": _SYSTEM}]
 
-    messages = [{"role": "system", "content": system_content}]
-
-    if user_profile:
-        messages.append({"role": "system", "content": f"[What you know about this person]\n{user_profile}"})
-
-    if summary:
-        messages.append({"role": "system", "content": f"[Prior session context]\n{summary}"})
+    # Greetings: skip all context injection — keep it clean and natural
+    if mode != "greeting":
+        if user_profile:
+            messages.append({"role": "system", "content": f"[Context about this person]\n{user_profile}"})
+        if assessment_context:
+            messages.append({"role": "system", "content": assessment_context})
+        if journal_context:
+            messages.append({"role": "system", "content": journal_context})
+        if summary:
+            messages.append({"role": "system", "content": f"[Prior context]\n{summary}"})
 
     for turn in history:
         if "message" in turn:
@@ -127,4 +137,4 @@ def build_companion_prompt(
             messages.append({"role": "assistant", "content": turn["response"]})
 
     messages.append({"role": "user", "content": message})
-    return messages
+    return messages, mode

@@ -13,6 +13,7 @@ from app.graph.nodes.output_normalizer import output_normalizer_node
 from app.graph.nodes.observability import observability_node
 from app.graph.nodes.memory_update import memory_update_node
 from app.graph.nodes.profile_extractor import profile_extractor_node
+from app.graph.nodes.assessment_tracker import assessment_tracker_node
 
 
 def route_after_rate_limiter(state):
@@ -50,6 +51,7 @@ def build_graph():
     graph.add_node("observability", observability_node)
     graph.add_node("memory_update", memory_update_node)
     graph.add_node("profile_extractor", profile_extractor_node)
+    graph.add_node("assessment_tracker", assessment_tracker_node)
 
     graph.set_entry_point("rate_limiter")
 
@@ -83,7 +85,8 @@ def build_graph():
     graph.add_edge("response_validator", "output_normalizer")
     graph.add_edge("output_normalizer", "observability")
     graph.add_edge("observability", "memory_update")
-    graph.add_edge("memory_update", END)
+    graph.add_edge("memory_update", "assessment_tracker")
+    graph.add_edge("assessment_tracker", END)
 
     return graph.compile()
 

@@ -10,6 +10,10 @@ from app.graph.state import MHCState
 from app.config import settings
 from app.services.session_service import SessionService
 from app.services.cache_service import CacheService
+from app.api.journal import router as journal_router
+from app.api.feedback import router as feedback_router
+from app.api.assessment import router as assessment_router
+from app.api.analytics import router as analytics_router
 
 log = structlog.get_logger()
 app = FastAPI(title="MHC Agentic V4", version="4.0.0")
@@ -21,6 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register feature routers
+app.include_router(journal_router)
+app.include_router(feedback_router)
+app.include_router(assessment_router)
+app.include_router(analytics_router)
+
 session_svc = SessionService()
 cache_svc = CacheService()
 
@@ -29,8 +39,11 @@ cache_svc = CacheService()
 async def startup():
     try:
         await session_svc.init_db()
-        # Import UserProfile so its table is created via shared Base metadata
+        # Import all ORM models so their tables are created via shared Base metadata
         from app.services.profile_service import UserProfile  # noqa: F401
+        from app.services.assessment_service import AssessmentScore, AssessmentHistory  # noqa: F401
+        from app.services.journal_service import JournalEntry  # noqa: F401
+        from app.services.feedback_service import FeedbackLog  # noqa: F401
         async with session_svc.engine.begin() as conn:
             from app.services.session_service import Base
             await conn.run_sync(Base.metadata.create_all)
@@ -76,6 +89,15 @@ async def chat(request: ChatRequest):
 
         last_risk = history[-1]["risk_level"] if history else "low"
 
+        # Load journal context (recent non-private entries for prompt injection)
+        journal_context = ""
+        try:
+            from app.services.journal_service import JournalService
+            journal_svc = JournalService()
+            journal_context = await journal_svc.get_recent_context(user_id, n=settings.journal_context_turns)
+        except Exception:
+            pass
+
         initial_state: MHCState = {
             "user_id": user_id,
             "session_id": session_id,
@@ -97,6 +119,9 @@ async def chat(request: ChatRequest):
             "session_summary": summary,
             "last_risk_level": last_risk,
             "user_profile": "",
+            "journal_context": journal_context,
+            "assessment_context": "",
+            "response_mode": "neutral",
             "response": "",
             "emotions": [],
             "risk_level": "low",
@@ -132,19 +157,18 @@ async def chat(request: ChatRequest):
             )
 
         # Write updated session to Redis cache (best-effort, non-blocking)
-        if not result.get("is_rate_limited") and not result.get("is_crisis"):
-            try:
-                new_turn = {
-                    "message": request.message,
-                    "response": result["response"],
-                    "risk_level": result.get("risk_level", "low"),
-                }
-                await cache_svc.set_session(session_id, {
-                    "history": (history + [new_turn])[-5:],
-                    "summary": summary or "",
-                })
-            except Exception:
-                pass  # cache failure is non-fatal
+        try:
+            new_turn = {
+                "message": request.message,
+                "response": result["response"],
+                "risk_level": result.get("risk_level", "low"),
+            }
+            await cache_svc.set_session(session_id, {
+                "history": (history + [new_turn])[-5:],
+                "summary": summary or "",
+            })
+        except Exception:
+            pass  # cache failure is non-fatal
 
         return ChatResponse(
             response=result["response"],
