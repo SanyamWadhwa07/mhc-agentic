@@ -26,7 +26,7 @@ User Input
   │     Single 70B call → response
   │
   └─ COMPLEX PATH (~45%)
-        [ReAct Agent]  — 8B model, max 4 steps, hardened loop
+        [ReAct Agent]  — llama-4-scout-17b, max 4 steps, hardened loop
         [RAG Tools]    — ChromaDB semantic search, domain-filtered
         [RAG Confidence Check] — avg_similarity gates bad retrieval
         [Model Router] — Routes to 120B on high risk / emotion / low RAG confidence
@@ -35,7 +35,8 @@ User Input
 [Response Validator]  — Length + empathy check, regenerates if needed
 [Output Normalizer]   — Strips clinical language, enforces tone
 [Observability]       — Latency, model used, RAG confidence, react steps
-[Memory Write]        — Async PostgreSQL/SQLite + Redis, never blocks response
+[Memory Write]        — Async SQLite/PostgreSQL + Redis, never blocks response
+[Profile Extractor]   — Updates persistent user profile from each turn
 ```
 
 **LLM call budget:** Crisis = 0 calls · Simple = 1 call · Complex = 2–3 calls · Weighted avg ~1.5 calls
@@ -47,7 +48,7 @@ User Input
 | Decision | Reason |
 |---|---|
 | Deterministic emotional scorer | Circular dependency if read from LLM output |
-| 8B only for ReAct reasoning, never final response | Cost — 8B is cheap, 70B/120B write to humans |
+| llama-4-scout-17b for ReAct reasoning, never final response | Cost — scout is cheap/fast, 70B/120B write to humans |
 | Safety gate before everything, no feature flags | Safety is not a feature |
 | Rate limiter fails open if Redis is down | Never block a user because of infrastructure |
 | SQLite default, PostgreSQL-ready | Zero setup locally, swap one env var to scale |
@@ -147,8 +148,8 @@ app/
 ├── safety/         Crisis detector, semantic safety, PII scrubber, sanitizer
 ├── rag/            Embedder, ChromaDB, retriever, confidence scorer, ingest
 ├── knowledge/      JSON knowledge bases (therapy, assessment, crisis, resource)
-├── prompts/        System prompts (companion, react, summary)
-├── services/       LLM service (Groq + fallback), session DB, Redis cache
+├── prompts/        4-layer companion prompt (persona/style/behavior/output), react, summary
+├── services/       LLM service (Groq + fallback chain), session DB, Redis cache, profile service
 ├── config.py       Pydantic Settings
 └── main.py         FastAPI app
 
@@ -159,6 +160,7 @@ tests/
 └── test_api/
 
 run_crisis_test.py   — 20-turn end-to-end conversation simulation (crisis arc)
+OVERVIEW.md          — Full architecture deep-dive and pitch doc
 ```
 
 ---
